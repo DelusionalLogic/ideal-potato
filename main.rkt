@@ -31,7 +31,7 @@
     )
 
   ; Calculate year {{{
-  (define (is-leap year)
+  (define (is-leap? year)
     (cond
       [(eq? (modulo year 400) 0) #t]
       [(eq? (modulo year 100) 0) #f]
@@ -41,7 +41,7 @@
     )
 
   (define (year-size year)
-    (if (is-leap year) 366 365)
+    (if (is-leap? year) 366 365)
     )
 
   (define (modulo-year_help day year)
@@ -64,7 +64,7 @@
     ) ;}}}
 
   (define (year-descriptor year) ;{{{
-    (if (is-leap year)
+    (if (is-leap? year)
       '(31 29 31 30 31 30 31 31 30 31 30 31)
       '(31 28 31 30 31 30 31 31 30 31 30 31)
       )
