@@ -1,100 +1,5 @@
 #lang scheme
-
-;Unix timestamp parsing, adapted from the source of GMTIME in minix
-(module time scheme
-  (provide second minute hour day-of-week day-of-month day-of-year month year)
-
-  (define SEC_PER_DAY 86400)
-
-  (define (sec-of-day ts)
-    (modulo ts SEC_PER_DAY)
-    )
-
-  (define (day-since-1-1970 ts)
-    (floor (/ ts SEC_PER_DAY))
-    )
-
-  (define (second ts)
-    (modulo (sec-of-day ts) 60)
-    )
-
-  (define (minute ts)
-    (modulo (floor (/ (sec-of-day ts) 60)) 60)
-    )
-
-  (define (hour ts)
-    (modulo (floor (/ (sec-of-day ts) 3600)) 24)
-    )
-
-  (define (day-of-week ts)
-    (modulo (+ (day-since-1-1970 ts) 3) 7) ;The 0th day was a thursday, so align to sunday with +4
-    )
-
-  ; Calculate year {{{
-  (define (is-leap? year)
-    (cond
-      [(eq? (modulo year 400) 0) #t]
-      [(eq? (modulo year 100) 0) #f]
-      [(eq? (modulo year 4) 0) #t]
-      [else #f]
-      )
-    )
-
-  (define (year-size year)
-    (if (is-leap? year) 366 365)
-    )
-
-  (define (modulo-year_help day year)
-    (cond
-      [(>= day (year-size year)) (modulo-year_help (- day (year-size year)) (+ year 1))]
-      [else (list year day)]
-      )
-    )
-
-  (define (unix-modulo-year ts)
-    (modulo-year_help (day-since-1-1970 ts) 1970)
-    )
-  ; }}}
-  (define (day-of-year ts) ;{{{
-    (list-ref (unix-modulo-year ts) 1)
-    ) ;}}}
-
-  (define (year ts) ;{{{
-    (list-ref (unix-modulo-year ts) 0)
-    ) ;}}}
-
-  (define (year-descriptor year) ;{{{
-    (if (is-leap? year)
-      '(31 29 31 30 31 30 31 31 30 31 30 31)
-      '(31 28 31 30 31 30 31 31 30 31 30 31)
-      )
-    ) ;}}}
-  (define (days-in-month year month) ;{{{
-    (list-ref (year-descriptor year) month)
-    ) ;}}}
-
-  (define (modulo-month_help year day month)
-    (cond
-      [(>= day (days-in-month year month)) (modulo-month_help year (- day (days-in-month year month)) (+ month 1))]
-      [else (list month day)]
-      )
-    )
-
-  (define (unix-modulo-month ts)
-    (modulo-month_help (year ts) (day-of-year ts) 0)
-    )
-
-  (define (month ts)
-    (list-ref (unix-modulo-month ts) 0)
-    )
-
-  (define (day-of-month ts)
-    (list-ref (unix-modulo-month ts) 1)
-    )
-
-  )
-
-(require 'time)
+(require "time.rkt")
 
 (define (day-name day)
   (list-ref '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun") day)
@@ -107,3 +12,218 @@
 (define ts (current-seconds))
 
 (format-time ts)
+
+; Calendar layout
+;	CALENDAR:
+;	'(
+;		<NAME>
+;		<DESCRIPTION>
+;		'(
+;			<EVENT>*
+;		)
+;		'(
+;			<CALENDAR>*
+;		)
+;	)
+;
+;	EVENT:
+;	'(
+;		<TIMES>
+;		<DESCRIPTION>
+;	)
+;
+;	TIMES:
+;	'(
+;		<TIME> (FROM TIME)
+;		<TIME> (TO TIME)
+;	)
+;
+;	TIME:
+;	<UNIXTIME>
+(define cal
+(list
+  "PEWPEW"
+  "WOO"
+  (list
+	(list
+	  "TIME"
+	  "WOP"
+	  123
+	  123
+	)
+	(list
+	  "TIME"
+	  "WOP"
+	  234
+	  123
+	)
+  )
+  (list
+	(list
+	  "Cal2"
+	  "Cal2 desc"
+	  (list
+		(list
+		  "Event2"
+		  "Event2 desc"
+		  1222
+		  1337
+		  )
+		)
+	  (list
+		)
+	  )
+	 )
+)
+)
+(define (is-time? ts)
+  (number? ts)
+  )
+
+
+(define (is-event? event)
+  (match event
+		 [(list name desc start end) (and (string? name) (string? desc) (is-time? start) (is-time? end))]
+		 [_ #f]
+		 )
+  )
+
+(define (is-calendar? cal)
+  (match cal
+		 [(list name desc events cals) (and (string? name) (string? desc) (andmap is-event? events) (andmap is-calendar? cals))]
+		 [_ #f]
+		 )
+  )
+
+(define (with-calendar cal func)
+  (if (is-calendar? cal)
+	(func cal)
+	(error "Not a calendar")
+	)
+  )
+
+(define (with-event event func)
+  (if (is-event? event)
+	(func event)
+	(error "Not an Event")
+	)
+  )
+
+(define (calendar-name cal)
+	(with-calendar cal
+	  (lambda (cal)
+		(list-ref cal 0)
+		)
+	  )
+  )
+
+(define (calendar-description cal)
+	(with-calendar cal
+	  (lambda (cal)
+		(list-ref cal 1)
+		)
+	  )
+  )
+
+(define (calendar-events cal)
+	(with-calendar cal
+	  (lambda (cal)
+		(list-ref cal 2)
+		)
+	  )
+  )
+
+(define (calendar-calendars cal)
+	(with-calendar cal
+	  (lambda (cal)
+		(list-ref cal 3)
+		)
+	  )
+  )
+
+(define (event-name event)
+  (with-event event
+	(lambda (event)
+	  (list-ref event 0)
+	  )
+	)
+  )
+
+(define (event-desc event)
+  (with-event event
+	(lambda (event)
+	  (list-ref event 1)
+	  )
+	)
+  )
+
+(define (event-start event)
+  (with-event event
+	(lambda (event)
+	  (list-ref event 2)
+	  )
+	)
+  )
+
+(define (event-end event)
+  (with-event event
+	(lambda (event)
+	  (list-ref event 3)
+	  )
+	)
+  )
+
+(define (mod-list_help lst curindex index function res)
+  (match lst
+	[(list x xs ...) (mod-list_help xs (+ curindex 1) index function (cons (if (eq? index curindex) (function x) x) res))]
+	[_ res]
+	)
+  )
+
+(define (mod-list lst index function)
+  (reverse (mod-list_help lst 0 index function '()))
+  )
+
+
+(define (calendar-new name desc)
+  (list name desc '() '())
+  )
+
+(define (calendar-add-event cal event)
+  (with-calendar cal
+	(lambda (cal)
+	  (mod-list cal 2 (lambda (old) (cons event old)))
+	  )
+	)
+  )
+
+(define (calendar-add-subcal cal subcal)
+  (with-calendar cal
+	(lambda (cal)
+	  (mod-list cal 3 (lambda (old) (cons subcal old)))
+	  )
+	)
+  )
+
+(print (calendar-add-event cal (list-ref (calendar-events cal) 1)))
+(print (calendar-add-subcal cal cal))
+(display "\n")
+
+(define (range_help current end step lst)
+  (cond
+    [(<= end current) lst]
+    [else (range_help (+ current step) end step (cons current lst))]
+    )
+  )
+
+(define range (case-lambda
+    [(end) (reverse (range_help 0 end 1 '()))]
+    [(start end) (reverse (range_help start end 1 '()))]
+    [(start end step) (reverse (range_help start end step '()))]
+  )
+  )
+
+(calendar-calendars cal)
+(list-ref (calendar-events cal) 0)
+(event-end (list-ref (calendar-events cal) 0))
+
