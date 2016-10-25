@@ -6,12 +6,8 @@
   )
 
 (define (format-time ts)
-  (format "~a ~a/~a-~a - ~a:~a.~a" (day-name (day-of-week ts)) (day-of-month ts) (month ts) (year ts) (hour ts) (minute ts) (second ts))
+  (format "~a ~a/~a-~a - ~a:~a.~a" (day-name (day-of-week ts)) (+ 1 (day-of-month ts)) (+ 1 (month ts)) (year ts) (hour ts) (minute ts) (second ts))
   )
-
-(define ts (current-seconds))
-
-(format-time ts)
 
 ; Calendar layout
 ;	CALENDAR:
@@ -173,17 +169,27 @@
 	)
   )
 
-(define (mod-list_help lst curindex index function res)
+(define (list-mod_help lst curindex index function res)
   (match lst
-	[(list x xs ...) (mod-list_help xs (+ curindex 1) index function (cons (if (eq? index curindex) (function x) x) res))]
+	[(list x xs ...) (list-mod_help xs (+ curindex 1) index function (cons (if (eq? index curindex) (function x) x) res))]
 	[_ res]
 	)
   )
 
-(define (mod-list lst index function)
-  (reverse (mod-list_help lst 0 index function '()))
+(define (list-mod lst index function)
+  (reverse (list-mod_help lst 0 index function '()))
   )
 
+(define (list-rem_help lst curindex index res)
+  (match lst
+	[(list x xs ...) (list-rem_help xs (+ curindex 1) index (if (eq? index curindex) res (cons x res)))]
+	[_ res]
+	)
+  )
+
+(define (list-rem lst index)
+  (reverse (list-rem_help lst 0 index '()))
+  )
 
 (define (calendar-new name desc)
   (list name desc '() '())
@@ -192,7 +198,7 @@
 (define (calendar-add-event cal event)
   (with-calendar cal
 	(lambda (cal)
-	  (mod-list cal 2 (lambda (old) (cons event old)))
+	  (list-mod cal 2 (lambda (old) (cons event old)))
 	  )
 	)
   )
@@ -200,13 +206,35 @@
 (define (calendar-add-subcal cal subcal)
   (with-calendar cal
 	(lambda (cal)
-	  (mod-list cal 3 (lambda (old) (cons subcal old)))
+	  (list-mod cal 3 (lambda (old) (cons subcal old)))
+	  )
+	)
+  )
+
+(define (calendar-remove-event cal eventnum)
+  (with-calendar cal
+	(lambda (cal)
+	  (list-mod cal 2 (lambda (old) (list-rem old eventnum)))
+	  )
+	)
+  )
+
+(define (calendar-remove-subcal cal subcalnum)
+  (with-calendar cal
+	(lambda (cal)
+	  (list-mod cal 3 (lambda (old) (list-rem old subcalnum)))
 	  )
 	)
   )
 
 (print (calendar-add-event cal (list-ref (calendar-events cal) 1)))
+(display "\n")
+(display "\n")
 (print (calendar-add-subcal cal cal))
+(display "\n")
+(display "\n")
+(print (calendar-remove-event cal 0))
+(display "\n")
 (display "\n")
 
 (define (range_help current end step lst)
@@ -225,5 +253,4 @@
 
 (calendar-calendars cal)
 (list-ref (calendar-events cal) 0)
-(event-end (list-ref (calendar-events cal) 0))
-
+(format-time (event-end (list-ref (calendar-events cal) 0)))
