@@ -1,9 +1,9 @@
 #lang scheme
-(require racket/trace)
 
 ;Unix timestamp parsing, adapted from the source of GMTIME in minix
 (provide second minute hour day-of-week day-of-month day-of-year month year
-         timestamp-add-second timestamp-add-minute timestamp-add-hour timestamp-add-day timestamp-add-month timestamp-add-year)
+         timestamp-new timestamp-add-second timestamp-add-minute timestamp-add-hour timestamp-add-day timestamp-add-month timestamp-add-year
+		 string->time)
 
 (define SEC_PER_DAY 86400)
 
@@ -128,17 +128,14 @@
   (timestamp-add-month timestamp (* 12 years))
   )
 
-
-
-
-(define (day-name day)
-  (list-ref '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun") day)
+(define (parse-string str)
+  (match (regexp-match #px"(\\d{2})\\/(\\d{2}) \\- (\\d{4}) (\\d{2})\\:(\\d{2})\\.(\\d{2})" str)
+	[(list _ other ...) (map string->number other)]
+	)
   )
 
-(define (format-time ts)
-  (format "~a ~a/~a-~a - ~a:~a.~a" (day-name (day-of-week ts)) (+ 1 (day-of-month ts)) (+ 1 (month ts)) (year ts) (hour ts) (minute ts) (second ts))
+(define (string->time str)
+  (match (parse-string str)
+	[(list day month year hour minute second) (timestamp-add-year (timestamp-add-month (timestamp-add-day (timestamp-add-hour (timestamp-add-minute (timestamp-add-second (timestamp-new) second) minute) hour) (- day 1)) (- month 1)) (- year 1970))]
+	)
   )
-
-(define ts (current-seconds))
-(format-time ts)
-(format-time (timestamp-add-month ts 0))

@@ -1,4 +1,7 @@
 #lang scheme
+
+(provide html body head title h1 div ul li)
+
 (define (list-between sep lst)
   (match lst
       ['() (list sep)]
@@ -12,8 +15,8 @@
 
 (define (tag name params children)
   (string-append
-   (format "<~A~A>" name (list->sep-string " " params))
-   (list->sep-string "\n" children)
+   (format "<~A~A>" name (list->sep-string "" params))
+   (list->sep-string "" (flatten children))
    (format "</~A>" name)
    )
   )
@@ -34,14 +37,12 @@
   (tag "title" '() children)
   )
 
-(define (h1 params . children)
-  (tag "h1" params children)
+(define (h1 . children)
+  (tag "h1" '() children)
   )
 
-(define div (case-lambda
-               [(params child . children) (tag "div" params (cons child children))]
-               [children (tag "div" '() children)]
-               )
+(define (div . children)
+  (tag "div" '() children)
   )
 
 (define (ul . children)
@@ -51,5 +52,3 @@
 (define (li . children)
   (tag "li" '() children)
   )
-
-(display (html (head (div '("div=\"a\"") "what")) (body (ul (li "as")))))
