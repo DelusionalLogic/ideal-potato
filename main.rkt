@@ -145,7 +145,7 @@
 
 (define (calendar-new name desc [events '()] [subcal '()])
   (cond
-    [(and (string? name) (string? desc) (andmap is-event? events) (andmap is-calendar? subcal)) (list name desc events subcal)]
+    [(and (string? name) (string? desc) (andmap is-event? events) (andmap calendar? subcal)) (list name desc events subcal)]
     [else (error "Invalid parmeters")]
     )
   )
