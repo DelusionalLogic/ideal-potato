@@ -2,6 +2,7 @@
 
 ;Unix timestamp parsing, adapted from the source of GMTIME in minix
 (provide second minute hour day-of-week day-of-month day-of-year month year
+         is-timestamp?
          timestamp-new timestamp-add-second timestamp-add-minute timestamp-add-hour timestamp-add-day timestamp-add-month timestamp-add-year
          string->time)
 
